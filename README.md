@@ -1,6 +1,6 @@
 # seongj-un.github.io
 
-Portfolio of Seongjun Park (박성준), backend developer.
+Portfolio of Seongjun Park (박성준), 5x engineer.
 
 The page is built live in front of the visitor by a small crew of cursor agents (10 on desktop, 8 on phones): they drag out wireframes, fill grey placeholders, type headings and sweep-select paragraphs, scrolling down section by section. Only agents with work are on screen; an idle one fades out where it stopped and every agent leaves once the page is done. The pill at the bottom shows progress and lets you pause, skip, replay or hide the agents.
 

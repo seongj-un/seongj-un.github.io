@@ -67,6 +67,7 @@ button { font: inherit; color: inherit; }
 .display { margin: 0 0 26px; font-weight: 600; font-size: clamp(46px, 6vw, 92px); line-height: 0.96; letter-spacing: -0.05em; }
 .line { display: block; }
 .dim { color: var(--dim); }
+.x5 { color: var(--accent); }
 .lede { margin: 0 0 34px; max-width: 34em; font-size: 17px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; }
 

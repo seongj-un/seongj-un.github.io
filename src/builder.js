@@ -11,6 +11,8 @@
 const PALETTE = ['#f2f1ec', '#8fb8ff', '#f2f1ec', '#ffad85'];
 const ARROW = 'M1.5 1.5 L1.5 14 L5 10.6 L7.6 16 L10 15 L7.4 9.6 L12.4 9.6 Z';
 const PRI = { rule: 0, frame: 1, block: 2, type: 3, sweep: 4 };
+// how long a finished screen stays put before the director scrolls on
+const HOLD_MS = 3000;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
@@ -399,6 +401,16 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
   async function direct(run) {
     let current = null;
     let guide = null;
+    // pausable wait that ends early if the run is replaced or the visitor takes over scrolling
+    const hold = async (ms, r) => {
+      let left = ms;
+      while (left > 0 && alive(r) && auto) {
+        await gate();
+        const t = performance.now();
+        await sleep(Math.min(100, left));
+        left -= performance.now() - t;
+      }
+    };
     const closeSection = (sec) => {
       if (guide) { fade(guide, 500); guide = null; }
 
@@ -415,15 +427,23 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
       let batch;
       if (auto) {
         const sec = sections.find((s) => rest.some((l) => s.contains(l)));
+        const own = rest.filter((l) => sec.contains(l)).sort((p, q) => docTop(p) - docTop(q));
+        const top = docTop(own[0]);
+        const fixedNav = sec.classList.contains('nav');
+        const needScroll = !fixedNav && (top < scrollY + navH() || top > scrollY + innerHeight - 140);
+        // let the visitor look at a finished screen before moving on
+        if (needScroll) {
+          if (inFlight.size) { await sleep(120); continue; }
+          await hold(HOLD_MS, run);
+          if (!alive(run)) return;
+          if (!auto) continue;
+        }
         if (sec !== current) {
           closeSection(current);
           current = sec;
           if (sec && !sec.classList.contains('nav')) guide = drawGuide(sec, run);
         }
-        const own = rest.filter((l) => sec.contains(l)).sort((p, q) => docTop(p) - docTop(q));
-        const top = docTop(own[0]);
-        const fixedNav = sec.classList.contains('nav');
-        if (!fixedNav && (top < scrollY + navH() || top > scrollY + innerHeight - 140)) {
+        if (needScroll) {
           await smoothScroll(top - navH() - 40, 750 * S, run);
           if (!alive(run)) return;
         }
@@ -454,7 +474,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     updatePill();
     disperse();
     if (natural && auto && run === runId) {
-      setTimeout(() => { if (!running) smoothScroll(0, 1500, -1); }, 900);
+      setTimeout(() => { if (!running) smoothScroll(0, 1500, -1); }, HOLD_MS);
     }
   }
 
