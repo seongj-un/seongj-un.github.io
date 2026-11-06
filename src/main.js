@@ -15,15 +15,15 @@ const params = new URLSearchParams(location.search);
 const small = window.matchMedia('(max-width: 760px)').matches;
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const agentsOff = localStorage.getItem('agents') === 'off';
-const speed = Math.min(3, Math.max(0.2, parseFloat(params.get('speed')) || 1));
+const speed = Math.min(3, Math.max(0.2, parseFloat(params.get('speed')) || (small ? 0.5 : 0.8)));
 
 const art = createHeroArt($('.hero-art'));
 const builder = createBuilder({
   overlay: $('#overlay'),
   pill: $('#pill'),
   page: $('.page'),
-  count: small ? 16 : 40,
-  keep: small ? 0 : 4,
+  count: small ? 8 : 10,
+  keep: 0,
   speed,
 });
 

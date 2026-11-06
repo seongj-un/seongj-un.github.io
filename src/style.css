@@ -147,6 +147,8 @@ button { font: inherit; color: inherit; }
 .building [data-layer='sweep']:not(.built):not(.sweeping) { opacity: 0; }
 .building [data-layer='frame']:not(.built) { border-color: transparent !important; background-color: transparent !important; background-image: none !important; }
 .building [data-layer='rule']:not(.built) { border-color: transparent !important; }
+.with { transition: opacity 0.4s ease; }
+.building [data-layer]:not(.built) .with { opacity: 0; }
 .typing .tr { color: transparent; }
 .caret { display: inline-block; width: 0; height: 0.95em; margin-right: -2px; vertical-align: -0.08em; border-left: 2px solid var(--blue); }
 
@@ -168,12 +170,12 @@ button { font: inherit; color: inherit; }
 .wf--review .wf-tag { background: var(--red); left: -1px; top: -19px; transform: none; border-radius: 3px 3px 3px 0; }
 .wf.out, .hl.out, .ln.out, .guide.out { opacity: 0; }
 .hl { position: absolute; background: rgba(61, 139, 255, 0.34); transform-origin: left; transform: scaleX(0); transition: opacity 0.4s ease; }
-.ln { position: absolute; height: 1px; background: var(--blue); box-shadow: 0 0 8px rgba(61, 139, 255, 0.9); transform-origin: left; transform: scaleX(0); transition: opacity 0.5s ease; }
-.guide { position: absolute; width: 1px; background: var(--red); box-shadow: 0 0 6px rgba(255, 59, 59, 0.7); transform-origin: top; transform: scaleY(0); transition: opacity 0.6s ease; }
+.ln { position: absolute; height: 1px; background: var(--blue); transform-origin: left; transform: scaleX(0); transition: opacity 0.5s ease; }
+.guide { position: absolute; width: 1px; background: rgba(255, 255, 255, 0.14); transform-origin: top; transform: scaleY(0); transition: opacity 0.6s ease; }
 
 .agent { position: absolute; left: 0; top: 0; opacity: 0; transition: opacity 0.35s ease; will-change: transform; }
 .agent.on { opacity: 1; }
-.agent svg { display: block; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55)); }
+.agent svg { display: block; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.5)); }
 .agent .arrow path { fill: var(--c); stroke: #0b0b0b; stroke-width: 1.1; stroke-linejoin: round; }
 .agent .ibeam { display: none; }
 .agent .ibeam path { fill: none; stroke: var(--c); stroke-width: 1.6; stroke-linecap: round; }
@@ -192,11 +194,10 @@ button { font: inherit; color: inherit; }
 .pill b { color: #fff; font-weight: 500; }
 .pill .sep { color: #6a6964; }
 .pill-dots { display: inline-flex; gap: 3px; }
-.pill-dots i { width: 7px; height: 7px; border-radius: 50%; background: #ff5a36; }
-.pill-dots i:nth-child(2) { background: #ffd23f; }
-.pill-dots i:nth-child(3) { background: #3ddc97; }
-.pill-dots i:nth-child(4) { background: #5aa9ff; }
-.pill-dots i:nth-child(5) { background: #ff6fb5; }
+.pill-dots i { width: 7px; height: 7px; border-radius: 50%; background: #f2f1ec; }
+.pill-dots i:nth-child(2) { background: #8fb8ff; }
+.pill-dots i:nth-child(3) { background: #ffad85; }
+.pill-dots i:nth-child(n + 4) { display: none; }
 .pill-bar { width: 64px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.14); overflow: hidden; }
 .pill-bar i { display: block; height: 100%; background: var(--blue); transform-origin: left; transform: scaleX(0); transition: transform 0.3s ease; }
 .pill button { height: 28px; padding: 0 11px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.1); color: #f2f1ec; cursor: pointer; font: 500 11.5px/1 var(--mono); }

@@ -8,7 +8,7 @@
 // The director walks the sections top to bottom, scrolling the page as it goes.
 // If the visitor scrolls on their own, it switches to building whatever is on screen.
 
-const PALETTE = ['#ff5a36', '#ffd23f', '#3ddc97', '#ff6fb5', '#5aa9ff', '#f4f4f0', '#b18cff', '#4de1e8'];
+const PALETTE = ['#f2f1ec', '#8fb8ff', '#f2f1ec', '#ffad85'];
 const ARROW = 'M1.5 1.5 L1.5 14 L5 10.6 L7.6 16 L10 15 L7.4 9.6 L12.4 9.6 Z';
 const PRI = { rule: 0, frame: 1, block: 2, type: 3, sweep: 4 };
 
@@ -76,24 +76,26 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     const el = document.createElement('div');
     el.className = 'agent';
     el.style.setProperty('--c', PALETTE[i % PALETTE.length]);
-    el.innerHTML = `<svg class="arrow" viewBox="0 0 18 18" width="21" height="21" aria-hidden="true"><path d="${ARROW}"/></svg><svg class="ibeam" viewBox="0 0 10 18" width="11" height="20" aria-hidden="true"><path d="M2 1.5h6M5 1.5v15M2 16.5h6"/></svg>`;
+    el.innerHTML = `<svg class="arrow" viewBox="0 0 18 18" width="18" height="18" aria-hidden="true"><path d="${ARROW}"/></svg><svg class="ibeam" viewBox="0 0 10 18" width="11" height="20" aria-hidden="true"><path d="M2 1.5h6M5 1.5v15M2 16.5h6"/></svg>`;
     overlay.appendChild(el);
     return { el, x: -60, y: -60, vx: 0, vy: 0, tx: -60, ty: -60, glide: null, arrive: null, chain: Promise.resolve(), pending: 0, on: false, idle: true, busy: false, w: rnd(0, 6.28) };
   });
 
   function edgePoint() {
     const w = innerWidth, h = innerHeight, y0 = scrollY;
-    switch (Math.floor(Math.random() * 4)) {
-      case 0: return { x: rnd(0, w), y: y0 - 30 };
-      case 1: return { x: w + 30, y: y0 + rnd(0, h) };
-      case 2: return { x: rnd(0, w), y: y0 + h + 30 };
-      default: return { x: -30, y: y0 + rnd(0, h) };
-    }
+    // enter from the left or right edge only, so agents never streak across the copy
+    return Math.random() < 0.5 ? { x: -30, y: y0 + rnd(h * 0.2, h * 0.8) } : { x: w + 30, y: y0 + rnd(h * 0.2, h * 0.8) };
   }
   function show(a, on) {
     if (on && !a.on) {
-      const p = edgePoint();
-      a.x = p.x; a.y = p.y; a.vx = 0; a.vy = 0;
+      // reappear where it faded out if that spot is still on screen, else enter from a side edge
+      const inView = a.x > 0 && a.x < innerWidth && a.y > scrollY && a.y < scrollY + innerHeight;
+      if (!inView) {
+        const p = edgePoint();
+        a.x = p.x; a.y = p.y;
+      }
+      a.vx = 0; a.vy = 0;
+      a.tx = a.x; a.ty = a.y;
     }
     a.on = on;
     a.el.classList.toggle('on', on);
@@ -135,13 +137,10 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
         a.ty = g.y0 + (g.y1 - g.y0) * e;
         if (g.onStep) g.onStep(e);
         if (t >= 1) { a.glide = null; g.res(); }
-      } else if (a.idle) {
-        a.w += dt;
-        a.tx += Math.sin(a.w * 1.3) * 0.35;
-        a.ty += Math.cos(a.w * 1.1) * 0.35;
       }
-      const k = a.glide ? 320 : a.idle ? 10 : 110;
-      const c = 2 * Math.sqrt(k) * 0.85;
+      // critically damped: agents ease into place without overshoot or wobble
+      const k = a.glide ? 260 : a.idle ? 40 : 150;
+      const c = 2 * Math.sqrt(k);
       a.vx += ((a.tx - a.x) * k - a.vx * c) * dt;
       a.vy += ((a.ty - a.y) * k - a.vy * c) * dt;
       a.x += a.vx * dt;
@@ -153,16 +152,6 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
   }
   requestAnimationFrame(tick);
 
-  // idle agents drift around whatever is on screen
-  setInterval(() => {
-    for (const a of agents) {
-      if (!a.on || !a.idle || a.busy || a.glide) continue;
-      if (Math.random() < 0.55) {
-        a.tx = rnd(innerWidth * 0.04, innerWidth * 0.96);
-        a.ty = scrollY + rnd(innerHeight * 0.1, innerHeight * 0.9);
-      }
-    }
-  }, 1700);
 
   // ---------- pause / abort ----------
   const alive = (run) => run === runId;
@@ -238,7 +227,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     el.innerHTML = `<span class="tt"></span><span class="caret"></span><span class="tr">${esc(text)}</span>`;
     const [tS, caret, rS] = el.children;
     const n = text.length;
-    const dur = clamp(n * 24, 220, 900) * S;
+    const dur = clamp(n * 18, 200, 700) * S;
     let start = performance.now();
     let i = 0;
     while (i < n && alive(run)) {
@@ -269,7 +258,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     el.classList.add('sweeping');
     el.style.clipPath = 'inset(-6px 100% -6px -4px)';
     a.el.classList.add('ib');
-    const ms = clamp(r.w * 0.9, 360, 800) * S;
+    const ms = clamp(r.w * 0.7, 320, 650) * S;
     await glide(a, r.x, r.y + 2, r.x + r.w, r.y + Math.max(2, r.h - 16), ms, (e) => {
       el.style.clipPath = `inset(-6px ${(1 - e) * 100}% -6px -4px)`;
       hl.style.transform = `scaleX(${e})`;
@@ -297,7 +286,11 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     }).finally(() => {
       if (alive(run)) inFlight.delete(el);
       a.pending = Math.max(0, a.pending - 1);
-      if (!a.pending) a.idle = true;
+      if (!a.pending) {
+        a.idle = true;
+        // only working agents stay visible; an idle one fades out where it stopped
+        setTimeout(() => { if (running && a.idle && !a.pending) show(a, false); }, 450);
+      }
     });
     a.chain = job;
     return job;
@@ -332,7 +325,13 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
       if (!alive(run)) return;
       await glide(a, x, s.y, x, s.y + Math.min(s.h, innerHeight * 0.9), 520 * S, (e) => { g.style.transform = `scaleY(${e})`; });
       g.style.transform = 'scaleY(1)';
-    }).finally(() => { a.pending = Math.max(0, a.pending - 1); if (!a.pending) a.idle = true; });
+    }).finally(() => {
+      a.pending = Math.max(0, a.pending - 1);
+      if (!a.pending) {
+        a.idle = true;
+        setTimeout(() => { if (running && a.idle && !a.pending) show(a, false); }, 450);
+      }
+    });
     return g;
   }
 
@@ -389,7 +388,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     let guide = null;
     const closeSection = (sec) => {
       if (guide) { fade(guide, 500); guide = null; }
-      if (sec) review(sec, run);
+
     };
     while (alive(run)) {
       await gate();
@@ -462,7 +461,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
   // agents inspect whatever link the visitor hovers once the page is built
   document.addEventListener('pointerover', (e) => {
     const t = e.target.closest && e.target.closest('a, button');
-    if (!t || running || agentsOff || pill.contains(t)) return;
+    if (!keep || !t || running || agentsOff || pill.contains(t)) return;
     const a = agents.find((x) => x.on && x.idle && !x.busy);
     if (!a) return;
     a.busy = true;
@@ -491,15 +490,9 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     pausedTotal = 0;
     t0 = performance.now();
     root.classList.add('building');
-    agents.forEach((a, i) => {
-      show(a, true);
-      a.idle = true;
-      a.tx = rnd(innerWidth * 0.05, innerWidth * 0.95);
-      a.ty = scrollY + rnd(innerHeight * 0.1, innerHeight * 0.9);
-      a.el.style.transitionDelay = `${i * 12}ms`;
-    });
+    agents.forEach((a) => { a.idle = true; });
     updatePill();
-    sleep(650 * S).then(() => direct(run));
+    sleep(400 * S).then(() => direct(run));
   }
 
   function skip() {

@@ -2,7 +2,7 @@
 
 Portfolio of Seongjun Park (박성준), backend developer.
 
-The page is built live in front of the visitor by a swarm of cursor agents: they drag out wireframes, fill grey placeholders, type headings, sweep-select paragraphs and draw red layout guides, scrolling down section by section. The pill at the bottom shows progress and lets you pause, skip, replay or hide the agents.
+The page is built live in front of the visitor by a small crew of cursor agents (10 on desktop, 8 on phones): they drag out wireframes, fill grey placeholders, type headings and sweep-select paragraphs, scrolling down section by section. Only agents with work are on screen; an idle one fades out where it stopped and every agent leaves once the page is done. The pill at the bottom shows progress and lets you pause, skip, replay or hide the agents.
 
 - `src/builder.js`: the agents and the director. Every element marked `data-layer` is one layer (`block`, `frame`, `rule`, `type`, `sweep`).
 - `src/hero3d.js`: the hero object in Three.js. A trefoil tube with requests flowing through it; it draws as a wireframe, then extrudes solid when its layer is built.
