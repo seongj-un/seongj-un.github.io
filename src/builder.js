@@ -16,8 +16,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
-// sine in-out: peak speed is only ~1.6x the average, so nothing whips across the screen
-const ease = (t) => -(Math.cos(Math.PI * t) - 1) / 2;
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed = 1 }) {
@@ -101,17 +100,16 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     a.on = on;
     a.el.classList.toggle('on', on);
   }
-  // travel is a timed, eased move along a slight arc, like a person moving a mouse
-  function moveTo(a, x, y) {
-    if (a.glide) { const g = a.glide; a.glide = null; g.res(); }
-    const d = Math.hypot(x - a.x, y - a.y);
-    if (d < 2) return Promise.resolve();
-    const ms = clamp(500 + d * 1.5, 700, 2300);
-    const arc = clamp(d * 0.07, 0, 60) * (Math.random() < 0.5 ? -1 : 1);
-    return glide(a, a.x, a.y, x, y, ms, null, arc);
+  function moveTo(a, x, y, timeout = 1500) {
+    a.glide = null;
+    a.tx = x; a.ty = y;
+    return new Promise((res) => {
+      a.arrive = res;
+      setTimeout(() => { if (a.arrive === res) { a.arrive = null; res(); } }, timeout);
+    });
   }
-  function glide(a, x0, y0, x1, y1, ms, onStep, arc = 0) {
-    return new Promise((res) => { a.glide = { x0, y0, x1, y1, t0: performance.now(), ms, res, onStep, arc }; });
+  function glide(a, x0, y0, x1, y1, ms, onStep) {
+    return new Promise((res) => { a.glide = { x0, y0, x1, y1, t0: performance.now(), ms, res, onStep }; });
   }
   function releaseAgents() {
     for (const a of agents) {
@@ -137,12 +135,6 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
         const e = ease(t);
         a.tx = g.x0 + (g.x1 - g.x0) * e;
         a.ty = g.y0 + (g.y1 - g.y0) * e;
-        if (g.arc) {
-          const dx = g.x1 - g.x0, dy = g.y1 - g.y0, len = Math.hypot(dx, dy) || 1;
-          const off = Math.sin(Math.PI * e) * g.arc;
-          a.tx += (-dy / len) * off;
-          a.ty += (dx / len) * off;
-        }
         if (g.onStep) g.onStep(e);
         if (t >= 1) { a.glide = null; g.res(); }
       }
@@ -192,7 +184,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     el.dispatchEvent(new CustomEvent('layerstart'));
     const d = box(r, 'wf wf--drag', `${label(el)}  ${Math.round(r.w)} × ${Math.round(r.h)}`);
     d.style.clipPath = 'inset(0 100% 100% 0)';
-    const ms = clamp(450 + Math.hypot(r.w, r.h) * 0.9, 650, 1300) * S;
+    const ms = clamp(200 + Math.hypot(r.w, r.h) * 0.6, 260, 650) * S;
     await glide(a, r.x, r.y, r.x + r.w, r.y + r.h, ms, (e) => {
       d.style.clipPath = `inset(0 ${(1 - e) * 100}% ${(1 - e) * 100}% 0)`;
     });
@@ -215,7 +207,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     await gate();
     if (!alive(run)) return;
     const ln = box({ x: r.x, y, w: r.w, h: 1 }, 'ln');
-    await glide(a, r.x, y, r.x + r.w, y, clamp(r.w * 0.8, 500, 1300) * S, (e) => { ln.style.transform = `scaleX(${e})`; });
+    await glide(a, r.x, y, r.x + r.w, y, clamp(r.w * 0.55, 280, 900) * S, (e) => { ln.style.transform = `scaleX(${e})`; });
     if (!alive(run)) return;
     markBuilt(el);
     fade(ln, 150);
@@ -235,7 +227,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     el.innerHTML = `<span class="tt"></span><span class="caret"></span><span class="tr">${esc(text)}</span>`;
     const [tS, caret, rS] = el.children;
     const n = text.length;
-    const dur = clamp(n * 45, 400, 1500) * S;
+    const dur = clamp(n * 18, 200, 700) * S;
     let start = performance.now();
     let i = 0;
     while (i < n && alive(run)) {
@@ -266,7 +258,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     el.classList.add('sweeping');
     el.style.clipPath = 'inset(-6px 100% -6px -4px)';
     a.el.classList.add('ib');
-    const ms = clamp(r.w * 1.1, 600, 1200) * S;
+    const ms = clamp(r.w * 0.7, 320, 650) * S;
     await glide(a, r.x, r.y + 2, r.x + r.w, r.y + Math.max(2, r.h - 16), ms, (e) => {
       el.style.clipPath = `inset(-6px ${(1 - e) * 100}% -6px -4px)`;
       hl.style.transform = `scaleX(${e})`;
@@ -310,6 +302,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     const load = new Map(agents.map((a) => [a, a.pending]));
     const inView = (p) => p.x > -20 && p.x < innerWidth + 20 && p.y > scrollY - 20 && p.y < scrollY + innerHeight + 20;
     const lastAt = new Map(agents.map((a) => { const p = { x: a.tx, y: a.ty }; return [a, inView(p) ? p : null]; }));
+    const crew = agents;
     return Promise.all(batch.map((el, i) => {
       inFlight.add(el);
       const r = docRect(el);
@@ -323,7 +316,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
       load.set(a, load.get(a) + 1);
       lastAt.set(a, { x: r.x + r.w, y: r.y + r.h });
       const late = PRI[el.dataset.layer] >= 3 ? 180 : 0;
-      const delay = i < agents.length ? (i * 90 + late) * S : 0;
+      const delay = i < crew.length ? (i * 34 + late) * S : 0;
       return assign(a, el, delay, run);
     }));
   }
@@ -343,7 +336,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
     a.chain = a.chain.then(async () => {
       await moveTo(a, x, s.y + 4, 700);
       if (!alive(run)) return;
-      await glide(a, x, s.y, x, s.y + Math.min(s.h, innerHeight * 0.9), 900 * S, (e) => { g.style.transform = `scaleY(${e})`; });
+      await glide(a, x, s.y, x, s.y + Math.min(s.h, innerHeight * 0.9), 520 * S, (e) => { g.style.transform = `scaleY(${e})`; });
       g.style.transform = 'scaleY(1)';
     }).finally(() => {
       a.pending = Math.max(0, a.pending - 1);
@@ -431,7 +424,7 @@ export function createBuilder({ overlay, pill, page, count = 40, keep = 4, speed
         const top = docTop(own[0]);
         const fixedNav = sec.classList.contains('nav');
         if (!fixedNav && (top < scrollY + navH() || top > scrollY + innerHeight - 140)) {
-          await smoothScroll(top - navH() - 40, 1100 * S, run);
+          await smoothScroll(top - navH() - 40, 750 * S, run);
           if (!alive(run)) return;
         }
         const limit = scrollY + innerHeight - 30;
