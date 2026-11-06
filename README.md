@@ -2,18 +2,19 @@
 
 Portfolio of Seongjun Park (박성준), backend developer.
 
-A scroll-driven 3D flight: a paper plane leaves a desk and flies through four chapters (meadow, forest, tunnel, sky cliffs) before the screen fades to white. A small swarm of cursor "agents" frames and reveals each chapter's text as it appears.
+The page is built live in front of the visitor by a swarm of cursor agents: they drag out wireframes, fill grey placeholders, type headings, sweep-select paragraphs and draw red layout guides, scrolling down section by section. The pill at the bottom shows progress and lets you pause, skip, replay or hide the agents.
 
-- Scene: Three.js, every model built in code (`src/world.js`), no external assets
-- Overlay: plain DOM and CSS (`src/swarm.js`, `src/style.css`)
-- Build: Vite. Deploy: GitHub Actions to GitHub Pages on every push to `main`
+- `src/builder.js`: the agents and the director. Every element marked `data-layer` is one layer (`block`, `frame`, `rule`, `type`, `sweep`).
+- `src/hero3d.js`: the hero object in Three.js. A trefoil tube with requests flowing through it; it draws as a wireframe, then extrudes solid when its layer is built.
+- `src/style.css`, `index.html`: the page itself. Without JavaScript, everything is visible as normal.
 
 ```bash
-npm install
+NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=343" npm install
 npm run dev      # local dev server
-npm run build    # outputs dist/
+NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--max-old-space-size=343" npm run build    # outputs dist/
 ```
 
-`?shot` in the URL disables the animation loop and exposes `window.__shot(progress)` for taking stills.
+URL flags: `?static` shows the finished page without the build, `?speed=0.5` plays it faster (lower is faster).
+The build is skipped for visitors who prefer reduced motion, and after the agents are hidden with the × button (stored in localStorage).
 
-The swarm can be switched off from the pill at the bottom; the choice is kept in localStorage. It is also off when the visitor prefers reduced motion.
+Deploys to GitHub Pages through GitHub Actions on every push to `main`.
